@@ -1,0 +1,81 @@
+% =============================================================================
+\section{Introducción}
+% =============================================================================
+
+\subsection{Descripción del problema}
+
+La Cocina de Kojo es un puesto de comida rápida ubicado en un centro
+comercial, con horario de atención de 10:00 am a 9:00 pm (660 minutos).
+El local ofrece dos tipos de productos: sándwiches y sushi.
+Para los objetivos de este estudio se asume que existen exclusivamente dos
+tipos de consumidores: los que consumen únicamente sándwiches y los que
+consumen únicamente productos de sushi.
+
+El sistema experimenta dos períodos de hora pico durante la jornada laboral:
+el primero entre las 11:30 am y la 1:30 pm, y el segundo entre las 5:00 pm
+y las 7:00 pm.
+Fuera de estos períodos la demanda es notablemente menor.
+El intervalo de tiempo entre la llegada de un consumidor y el siguiente
+se modela como un proceso de Poisson homogéneo por tramos (no homogéneo
+globalmente), con distribución exponencial de parámetro $\lambda$:
+\begin{itemize}
+  \item $\lambda_{\text{pico}} = 0{,}30$ clientes/min durante las horas pico,
+  \item $\lambda_{\text{fuera}} = 0{,}17$ clientes/min en el resto de la jornada.
+\end{itemize}
+
+El tiempo de preparación de cada pedido depende del tipo de producto y sigue
+una distribución Uniforme:
+\begin{itemize}
+  \item Sándwich: $S_{\text{sand}} \sim \mathcal{U}[3{,}\,5]$ minutos,
+  \item Sushi:    $S_{\text{sush}} \sim \mathcal{U}[5{,}\,8]$ minutos,
+\end{itemize}
+con probabilidad $p = 0{,}5$ de que cada cliente solicite sándwich.
+
+Actualmente, dos empleados trabajan toda la jornada preparando pedidos.
+La administración ha recibido quejas de clientes por los tiempos de espera y
+desea evaluar si incorporar un tercer empleado durante las horas pico reduciría
+significativamente el problema.
+
+\subsection{Objetivos}
+
+El objetivo del estudio es comparar mediante simulación dos políticas de
+personal:
+\begin{description}
+  \item[Escenario A (actual):] 2 empleados activos durante toda la jornada.
+  \item[Escenario B (alternativa):] 2 empleados base más 1 empleado adicional
+    exclusivamente durante las horas pico.
+\end{description}
+
+La \textbf{métrica principal de desempeño} es el porcentaje de clientes que
+esperan más de 5 minutos para recibir su pedido durante el transcurso de un
+día de trabajo.
+Métricas secundarias de interés son el tiempo de espera medio, la longitud
+media de la cola y la utilización de los empleados.
+
+\subsection{Variables del sistema}
+
+\Cref{tab:variables} resume las variables de entrada y de salida del modelo.
+
+\begin{table}[H]
+  \centering
+  \caption{Variables del modelo de simulación.}
+  \label{tab:variables}
+  \begin{tabular}{llll}
+    \toprule
+    \textbf{Tipo} & \textbf{Variable} & \textbf{Distribución / Valor} & \textbf{Unidad} \\
+    \midrule
+    Entrada & Tasa de llegadas (pico)     & $\lambda_p = 0{,}30$          & clientes/min \\
+    Entrada & Tasa de llegadas (fuera)    & $\lambda_f = 0{,}17$          & clientes/min \\
+    Entrada & Servicio sándwich           & $\mathcal{U}[3,5]$            & min \\
+    Entrada & Servicio sushi              & $\mathcal{U}[5,8]$            & min \\
+    Entrada & Prob.\ cliente sándwich     & $p = 0{,}5$                   & --- \\
+    Entrada & Empleados base              & $c = 2$                       & personas \\
+    Entrada & Empleados extra (Esc.\ B)   & $e = 1$ en pico               & personas \\
+    \midrule
+    Salida  & \% clientes $> 5$ min       & estimada por simulación       & \% \\
+    Salida  & Tiempo de espera medio      & estimado por simulación       & min \\
+    Salida  & Longitud media de la cola   & estimada por simulación       & clientes \\
+    Salida  & Utilización de empleados    & estimada por simulación       & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table}

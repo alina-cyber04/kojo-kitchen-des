@@ -1,0 +1,138 @@
+% =============================================================================
+%  La Cocina de Kojo — Simulación de Eventos Discretos
+%  Informe académico
+% =============================================================================
+\documentclass[12pt,a4paper]{article}
+
+% ── Codificación y lengua ────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+
+% ── Geometría ────────────────────────────────────────────────────────────────
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+
+% ── Matemáticas ──────────────────────────────────────────────────────────────
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ── Gráficos ─────────────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% ── Tablas profesionales ──────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{siunitx}
+\sisetup{
+  table-format        = 2.2,
+  table-number-alignment = center,
+  detect-all
+}
+\usepackage{array}
+
+% ── Algoritmos y pseudocódigo ─────────────────────────────────────────────────
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\renewcommand{\algorithmicrequire}{\textbf{Entrada:}}
+\renewcommand{\algorithmicensure}{\textbf{Salida:}}
+\floatname{algorithm}{Algoritmo}
+
+% ── Código fuente ─────────────────────────────────────────────────────────────
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{keyword}{RGB}{0,0,180}
+\definecolor{string}{RGB}{163,21,21}
+\definecolor{comment}{RGB}{0,128,0}
+
+\lstset{
+  language        = Python,
+  backgroundcolor = \color{codebg},
+  frame           = single,
+  rulecolor       = \color{codeframe},
+  basicstyle      = \ttfamily\small,
+  keywordstyle    = \color{keyword}\bfseries,
+  stringstyle     = \color{string},
+  commentstyle    = \color{comment}\itshape,
+  numbers         = left,
+  numberstyle     = \tiny\color{gray},
+  breaklines      = true,
+  showstringspaces= false,
+  tabsize         = 4
+}
+
+% ── Tipografía ────────────────────────────────────────────────────────────────
+\usepackage{setspace}
+\onehalfspacing
+
+% ── Cabeceras ─────────────────────────────────────────────────────────────────
+\setlength{\headheight}{14pt}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small La Cocina de Kojo}
+\fancyhead[R]{\small Simulación de Eventos Discretos}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Hipervínculos (siempre al final, antes de cleveref) ───────────────────────
+\usepackage[colorlinks=true, linkcolor=blue!60!black,
+            citecolor=green!50!black, urlcolor=blue]{hyperref}
+\usepackage{cleveref}
+
+% ── Bibliografía ──────────────────────────────────────────────────────────────
+\usepackage[numbers,sort&compress]{natbib}
+
+% ── Comandos personalizados ────────────────────────────────────────────────────
+\newcommand{\lam}{\lambda}
+\newcommand{\murate}{\mu}
+\DeclareMathOperator{\EE}{\mathbb{E}}
+\DeclareMathOperator{\VV}{\mathbb{V}}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+% ── Portada ───────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\bfseries La Cocina de Kojo\par}
+  \vspace{0.5cm}
+  {\large Simulación de Eventos Discretos\par}
+  \vspace{2cm}
+  \rule{\linewidth}{0.5pt}\\[0.4cm]
+  {\large Informe del Proyecto\par}
+  \rule{\linewidth}{0.5pt}\\[1.5cm]
+  {\large Asignatura: Simulación\par}
+  \vspace{1cm}
+  {\normalsize Facultad de Matemática y Computación\\
+   Universidad de La Habana\par}
+  \vspace{2cm}
+  {\normalsize\today\par}
+  \vfill
+\end{titlepage}
+
+% ── Tabla de contenidos ───────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ── Secciones ─────────────────────────────────────────────────────────────────
+\input{sections/01_introduccion}
+\newpage
+\input{sections/02_implementacion}
+\newpage
+\input{sections/03_resultados}
+\newpage
+\input{sections/04_modelo_matematico}
+\newpage
+\input{sections/05_conclusiones}
+
+% ── Bibliografía ──────────────────────────────────────────────────────────────
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

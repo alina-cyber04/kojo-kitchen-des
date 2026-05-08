@@ -1,0 +1,195 @@
+% =============================================================================
+\section{Modelo Matemático}
+% =============================================================================
+
+% ---------------------------------------------------------------------------
+\subsection{Clasificación del sistema de colas}
+% ---------------------------------------------------------------------------
+
+El sistema de La Cocina de Kojo puede clasificarse, usando la notación de
+Kendall, como un sistema \textbf{M/G/$c$}:
+\begin{itemize}
+  \item \textbf{M} (Markoviano): las llegadas de clientes forman un proceso
+    de Poisson, cuyos tiempos entre eventos son variables exponenciales
+    independientes --- memoria nula entre llegadas sucesivas.
+  \item \textbf{G} (General): los tiempos de servicio siguen distribuciones
+    uniformes, no exponenciales.
+  \item \textbf{$c$}: hay $c \in \{2, 3\}$ servidores paralelos con cola
+    única FIFO.
+\end{itemize}
+
+Dado que la tasa de llegadas no es constante a lo largo del día, el modelo
+global es en realidad un sistema M/G/$c$ \emph{no estacionario}.
+El análisis teórico que sigue trata cada período (pico / fuera de pico) de
+forma independiente asumiendo condiciones de régimen estacionario dentro de
+cada tramo.
+
+% ---------------------------------------------------------------------------
+\subsection{Parámetros del servicio}
+% ---------------------------------------------------------------------------
+
+\paragraph{Tiempo de servicio esperado.}
+Con probabilidad $p = 0{,}5$ el cliente pide sándwich
+($S_{\text{sand}} \sim \mathcal{U}[3,5]$) y con probabilidad $1-p = 0{,}5$
+pide sushi ($S_{\text{sush}} \sim \mathcal{U}[5,8]$).
+La esperanza del tiempo de servicio es:
+\begin{equation}
+  \EE[S] = p\,\EE[S_{\text{sand}}] + (1-p)\,\EE[S_{\text{sush}}]
+         = 0{,}5 \cdot \frac{3+5}{2} + 0{,}5 \cdot \frac{5+8}{2}
+         = 0{,}5 \times 4 + 0{,}5 \times 6{,}5
+         = \mathbf{5{,}25} \text{ min.}
+  \label{eq:ES}
+\end{equation}
+
+La tasa de servicio de un empleado es:
+\[
+  \mu = \frac{1}{\EE[S]} = \frac{1}{5{,}25} \approx 0{,}1905 \text{ clientes/min.}
+\]
+
+\paragraph{Segundo momento y varianza del servicio.}
+Para $X \sim \mathcal{U}[a,b]$ se tiene
+$\EE[X^2] = (a^2 + ab + b^2)/3$.
+Por tanto:
+\[
+  \EE[S_{\text{sand}}^2] = \frac{9 + 15 + 25}{3} = \frac{49}{3} \approx 16{,}33, \qquad
+  \EE[S_{\text{sush}}^2] = \frac{25 + 40 + 64}{3} = 43.
+\]
+\[
+  \EE[S^2] = 0{,}5 \times \frac{49}{3} + 0{,}5 \times 43
+           = 8{,}167 + 21{,}5 = \mathbf{29{,}67} \text{ min}^2.
+\]
+\[
+  \VV[S] = \EE[S^2] - (\EE[S])^2 = 29{,}67 - 5{,}25^2 = 29{,}67 - 27{,}5625
+         \approx \mathbf{2{,}11} \text{ min}^2, \quad
+  \sigma_S \approx 1{,}45 \text{ min.}
+\]
+
+% ---------------------------------------------------------------------------
+\subsection{Utilización teórica y estabilidad}
+% ---------------------------------------------------------------------------
+
+La \textbf{utilización} de cada servidor en el período analizado es:
+\begin{equation}
+  \rho = \frac{\lambda}{c \cdot \mu},
+  \label{eq:rho}
+\end{equation}
+con la condición de estabilidad $\rho < 1$.
+La \cref{tab:utilizacion_teorica} muestra los valores para cada combinación
+de período y escenario.
+
+\begin{table}[H]
+  \centering
+  \caption{Utilización teórica $\rho$ por período y escenario.}
+  \label{tab:utilizacion_teorica}
+  \begin{tabular}{llcccc}
+    \toprule
+    \textbf{Período} & \textbf{Escenario} & $\lambda$ & $c$ & $\mu$ & $\rho = \lambda/(c\mu)$ \\
+    \midrule
+    Fuera de pico & A & 0{,}17 & 2 & 0{,}1905 & 0{,}446 \\
+    Fuera de pico & B & 0{,}17 & 2 & 0{,}1905 & 0{,}446 \\
+    Pico          & A & 0{,}30 & 2 & 0{,}1905 & 0{,}787 \\
+    Pico          & B & 0{,}30 & 3 & 0{,}1905 & 0{,}525 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+En todos los casos $\rho < 1$: el sistema es estable en cada período.
+La carga más exigente corresponde al período pico del Escenario A ($\rho =
+0{,}787$), lo que explica la acumulación de cola observada en la simulación.
+
+% ---------------------------------------------------------------------------
+\subsection{Aproximación M/M/c como cota teórica}
+% ---------------------------------------------------------------------------
+
+Para obtener predicciones analíticas se aproxima el sistema M/G/$c$ por un
+sistema M/M/$c$ con la misma tasa media de servicio.
+Aunque los tiempos de servicio no son exponenciales, este modelo proporciona
+una cota de referencia útil.
+
+\paragraph{Fórmula de Erlang~C.}
+La probabilidad de que un cliente deba esperar en cola es~\citep{banks2010discrete}:
+\begin{equation}
+  C(c,\,a) = \frac{\displaystyle\frac{a^c}{c!}\cdot\frac{c}{c - a}}
+                  {\displaystyle\sum_{n=0}^{c-1}\frac{a^n}{n!}
+                   + \frac{a^c}{c!}\cdot\frac{c}{c - a}},
+  \label{eq:erlangC}
+\end{equation}
+donde $a = \lambda/\mu$ es la intensidad de tráfico.
+
+\paragraph{Tiempo de espera en cola (M/M/$c$).}
+\begin{equation}
+  W_q^{\text{MM}c} = \frac{C(c,\,a)}{c\,\mu\,(1-\rho)}.
+  \label{eq:Wq_mmc}
+\end{equation}
+
+\paragraph{Longitud media de cola.}
+Por la Ley de Little~\citep{little1961proof}:
+\begin{equation}
+  L_q = \lambda\,W_q.
+  \label{eq:little}
+\end{equation}
+
+Los resultados se muestran en la \cref{tab:teoria_vs_sim}.
+Los valores teóricos se calculan como media ponderada por tiempo de los dos períodos
+del día: $W_q^{\text{día}} = \frac{240}{660}\,W_q^{\text{pico}} + \frac{420}{660}\,W_q^{\text{fuera}}$,
+con $\lambda_{\text{eff}} = \frac{240 \times 0{,}30 + 420 \times 0{,}17}{660} = 0{,}217$ clientes/min.
+
+\begin{table}[H]
+  \centering
+  \caption{Comparación teoría M/M/$c$ vs.\ simulación ---
+           media ponderada del día completo.}
+  \label{tab:teoria_vs_sim}
+  \begin{tabular}{llccc}
+    \toprule
+    \textbf{Escenario} & \textbf{Indicador}
+      & \textbf{M/M/$c$ teórico}
+      & \textbf{Simulación (media)}
+      & \textbf{Sim $-$ Teo (\%)} \\
+    \midrule
+    A ($c_{\text{pico}}=2$) & $W_q$ (min)      & 3{,}95 & 2{,}19 & $-$44{,}6 \\
+    A ($c_{\text{pico}}=2$) & $L_q$ (clientes) & 0{,}86 & 0{,}48 & $-$44{,}2 \\
+    B ($c_{\text{pico}}=3$) & $W_q$ (min)      & 1{,}18 & 0{,}66 & $-$44{,}1 \\
+    B ($c_{\text{pico}}=3$) & $L_q$ (clientes) & 0{,}26 & 0{,}15 & $-$42{,}3 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------------------
+\subsection{Supuestos, restricciones y fuentes de discrepancia}
+% ---------------------------------------------------------------------------
+
+Las diferencias entre el modelo M/M/$c$ y la simulación se explican por
+varios factores:
+
+\begin{enumerate}
+  \item \textbf{Distribución del servicio (factor dominante).}
+    Los tiempos de servicio son uniformes, no exponenciales.
+    La distribución exponencial tiene coeficiente de variación $C_v = 1$,
+    mientras que $\mathcal{U}[3,5]$ tiene $C_v = 0{,}14$,
+    $\mathcal{U}[5,8]$ tiene $C_v = 0{,}13$, y la mezcla combinada tiene
+    $C_v = \sigma_S / \EE[S] = 1{,}45 / 5{,}25 \approx 0{,}28$.
+    Tiempos de servicio mucho menos variables que los exponenciales generan
+    colas notablemente menores, como predice la fórmula de
+    Pollaczek--Khinchine~\citep{ross2013simulation}.
+    Este factor explica que la simulación dé resultados aprox.\ \SI{44}{\percent}
+    menores que M/M/$c$ de manera consistente en ambos escenarios.
+
+  \item \textbf{No estacionariedad.}
+    La tasa $\lambda(t)$ cambia a lo largo del día.
+    El modelo estacionario sobreestima el efecto del pico porque asume que la
+    tasa alta ha estado vigente indefinidamente, acumulando más cola de la real.
+
+  \item \textbf{Condición transitoria.}
+    Al inicio de cada período pico el sistema parte de una cola residual, no del
+    estado de régimen estacionario que asume el modelo analítico.
+
+  \item \textbf{Jornada finita.}
+    La Ley de Little y la fórmula de Erlang C son resultados de largo plazo
+    (régimen estacionario); aquí el horizonte es de 660 min.
+\end{enumerate}
+
+\paragraph{Verificación con la Ley de Little.}
+Se puede verificar internamente la consistencia de la simulación usando
+$L_q = \lambda_{\text{eff}}\,W_q$, donde $\lambda_{\text{eff}}$ es la tasa
+efectiva de clientes atendidos.
+Para el Escenario A: $0{,}482 \approx (144{,}2 / 660) \times 2{,}185 = 0{,}218 \times 2{,}185 = 0{,}477$ $\checkmark$

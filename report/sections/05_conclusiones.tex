@@ -1,0 +1,59 @@
+% =============================================================================
+\section{Conclusiones}
+% =============================================================================
+
+\subsection{Recomendación principal}
+
+La simulación de 30 réplicas por escenario, emparejadas mediante números
+aleatorios comunes, proporciona evidencia estadística abrumadora ($p = 1{,}12 \times 10^{-11}$,
+$t = 10{,}8$, IC de la diferencia $[11{,}03;\;16{,}18]$ pp) de que incorporar
+un tercer empleado durante las horas pico reduce el porcentaje de clientes
+con espera superior a 5 minutos de \textbf{16{,}7\,\%} (Escenario A) a
+\textbf{3{,}1\,\%} (Escenario B), una mejora del 81{,}4\,\%.
+
+Se \textbf{recomienda adoptar el Escenario B} para la tasa de llegadas actual
+($\lambda_{\text{pico}} = 0{,}30$ clientes/min).
+
+\subsection{Hallazgos secundarios}
+
+\begin{itemize}
+  \item El tiempo de espera medio se reduce de 2{,}19 min a 0{,}66 min.
+  \item La longitud media de la cola decrece de 0{,}48 a 0{,}15 clientes.
+  \item La utilización del personal baja del 57{,}2\,\% al 50{,}2\,\%,
+    manteniéndose en niveles saludables que permiten absorber picos
+    transitorios sin colapsar el sistema.
+  \item El análisis de sensibilidad revela que la ventaja del Escenario B
+    se mantiene para $\lambda_{\text{pico}} \lesssim 0{,}42$; por encima de
+    ese umbral sería necesario incorporar un cuarto empleado.
+\end{itemize}
+
+\subsection{Limitaciones del modelo}
+
+\begin{enumerate}
+  \item \textbf{Disciplina de cola:} se asume FIFO estricto; no se modela
+    abandono (reneging) ni impaciencia de los clientes.
+  \item \textbf{Homogeneidad de empleados:} todos los servidores tienen la
+    misma distribución de servicio; no se considera variabilidad inter-empleado.
+  \item \textbf{Jornada determinista:} el horario de apertura y cierre, y las
+    fronteras de hora pico, son fijas.
+    En la práctica pueden fluctuar.
+  \item \textbf{Sin descansos ni ausencias:} el modelo asume disponibilidad
+    continua de los empleados.
+  \item \textbf{Modelo no estacionario aproximado:} la generación de llegadas
+    usa tasas constantes por tramos, no un proceso de Poisson no homogéneo
+    exacto.
+\end{enumerate}
+
+\subsection{Posibles extensiones}
+
+\begin{itemize}
+  \item Incorporar abandono de cola: modelar que los clientes se van si
+    la espera estimada supera un umbral.
+  \item Optimizar el número óptimo de empleados extra como función de
+    $\lambda_{\text{pico}}$, generalizando el análisis de sensibilidad.
+  \item Ajustar las distribuciones de servicio a datos reales del local
+    (análisis de bondad de ajuste).
+  \item Extender el análisis de parada usando métodos secuenciales
+    (semi-anchura fija) para garantizar el criterio del 5\,\% de precisión
+    relativa~\citep{law2015simulation}.
+\end{itemize}

@@ -1,0 +1,237 @@
+% =============================================================================
+\section{Detalles de Implementación}
+% =============================================================================
+
+La simulación fue implementada íntegramente en Python~3.13, sin el uso de
+librerías de simulación externas (p.ej.\ SimPy), con el objetivo de
+exhibir explícitamente cada mecanismo del paradigma de eventos discretos.
+El código fuente se organiza en seis paquetes independientes:
+\texttt{rng} (generación aleatoria), \texttt{engine} (motor DES),
+\texttt{model} (dominio del restaurante), \texttt{metrics} (colección
+de estadísticos), \texttt{experiments} (ejecución de réplicas) y
+\texttt{analysis} (estadística y visualización).
+
+% ---------------------------------------------------------------------------
+\subsection{Generador de números aleatorios (LCG)}
+% ---------------------------------------------------------------------------
+
+La base del sistema estocástico es un \textbf{Generador Congruencial Lineal}
+(LCG), definido por la recurrencia~\citep{knuth1997art}:
+\begin{equation}
+  X_{n+1} = (A \cdot X_n + C) \bmod M, \qquad U_n = \frac{X_n}{M},
+  \label{eq:lcg}
+\end{equation}
+con los parámetros de Knuth usados también por la biblioteca estándar de C
+en Linux (glibc):
+\[
+  A = 1\,664\,525, \quad C = 1\,013\,904\,223, \quad M = 2^{32}.
+\]
+Estos parámetros satisfacen los criterios de Hull--Dobell para período
+máximo igual a $M = 4\,294\,967\,296$, garantizando que la secuencia no se
+repite dentro de ninguna simulación práctica.
+
+% ---------------------------------------------------------------------------
+\subsection{Método de la transformada inversa}
+% ---------------------------------------------------------------------------
+
+Todas las variables aleatorias se generan mediante el método de la
+transformada inversa, cuya validez se sustenta en la siguiente proposición
+\citep{curso_conf2,ross2013simulation}.
+
+\begin{quote}
+\textbf{Proposición (Transformada Inversa).}
+Sea $U \sim \mathcal{U}(0,1)$.
+Para cualquier función de distribución acumulada continua $F$, la variable
+aleatoria $X = F^{-1}(U)$ tiene distribución $F$.
+\end{quote}
+
+\textit{Demostración.}
+Sea $F_X(x) = P[X \le x]$.
+Entonces:
+\[
+  F_X(x) = P\!\left[F^{-1}(U) \le x\right]
+          = P\!\left[U \le F(x)\right]
+          = F(x), \qquad \square
+\]
+donde la última igualdad es consecuencia de que $U$ es uniforme en $(0,1)$.
+
+\paragraph{Distribución exponencial.}
+Para modelar los tiempos entre llegadas se emplea
+$X \sim \operatorname{Exp}(\lambda)$, con función de distribución
+$F(x) = 1 - e^{-\lambda x}$.
+Invirtiendo:
+\begin{equation}
+  X = -\frac{1}{\lambda}\ln(U).
+  \label{eq:exp}
+\end{equation}
+
+\paragraph{Distribución uniforme.}
+Los tiempos de preparación siguen
+$X \sim \mathcal{U}[a,b]$, con $F(x) = (x-a)/(b-a)$.
+La inversión da:
+\begin{equation}
+  X = a + (b - a)\,U.
+  \label{eq:unif}
+\end{equation}
+
+% ---------------------------------------------------------------------------
+\subsection{Streams independientes y Common Random Numbers (CRN)}
+% ---------------------------------------------------------------------------
+
+Para garantizar comparaciones estadísticamente válidas entre escenarios se
+implementa la técnica de \textbf{números aleatorios comunes}
+(CRN)~\citep{law2015simulation}.
+Se mantienen tres streams LCG independientes:
+\begin{itemize}
+  \item \texttt{arrivals}: genera los tiempos entre llegadas sucesivas,
+  \item \texttt{type}: determina si cada cliente pide sándwich o sushi,
+  \item \texttt{service}: genera la duración de preparación de cada pedido.
+\end{itemize}
+
+Cada stream parte de una semilla separada por $10^6$ posiciones:
+\[
+  \texttt{seed}_{\text{arrivals}} = s, \quad
+  \texttt{seed}_{\text{type}}     = s + 10^6, \quad
+  \texttt{seed}_{\text{service}}  = s + 2 \times 10^6.
+\]
+Con ${\sim}200$ clientes por día y 3 streams, el consumo máximo por réplica
+es de ${\approx}600$ números, muy inferior al gap de $10^6$.
+
+El invariante clave del CRN es que el tiempo de servicio de cada cliente se
+sortea \emph{en el momento de su llegada}, no cuando inicia el servicio.
+Así, el cliente $k$ siempre consume el $k$-ésimo número del stream
+\texttt{service} independientemente del escenario.
+Esto induce correlación positiva $\rho > 0$ entre las réplicas pareadas de
+A y B, reduciendo la varianza del estimador de la diferencia:
+\[
+  \mathbb{V}(\bar{D}) = \mathbb{V}(\bar{A}) + \mathbb{V}(\bar{B}) - 2\,\operatorname{Cov}(A,B).
+\]
+
+% ---------------------------------------------------------------------------
+\subsection{Tipos de eventos}
+% ---------------------------------------------------------------------------
+
+El modelo define cinco tipos de eventos, descritos en \cref{tab:eventos}.
+
+\begin{table}[H]
+  \centering
+  \caption{Tipos de eventos del modelo DES de La Cocina de Kojo.}
+  \label{tab:eventos}
+  \begin{tabular}{lp{9cm}}
+    \toprule
+    \textbf{Tipo} & \textbf{Descripción y acciones principales} \\
+    \midrule
+    \textsc{llegada}        & Arribo de un nuevo cliente. Se determina su tipo
+                              (Bernoulli) y su tiempo de servicio (Uniforme, al llegar).
+                              Si hay servidor libre se asigna; si no, el cliente
+                              entra a la cola FIFO.
+                              Se programa la siguiente llegada. \\
+    \addlinespace
+    \textsc{partida}        & Fin del servicio de un cliente. El servidor queda
+                              libre. Si la cola no está vacía se atiende al
+                              siguiente cliente. Si el empleado está marcado
+                              para retiro, se elimina. \\
+    \addlinespace
+    \textsc{inicio\_pico}   & Comienzo de una hora pico. En el Escenario B se
+                              añade el empleado extra; si hay cola, comienza a
+                              atender de inmediato. \\
+    \addlinespace
+    \textsc{fin\_pico}      & Fin de una hora pico. En el Escenario B el empleado
+                              extra es marcado para retiro si está ocupado, o
+                              retirado inmediatamente si está libre. \\
+    \addlinespace
+    \textsc{fin\_simulacion}& Cierre del día (t = 660 min). Los servicios en curso
+                              se completan; los clientes en cola no reciben servicio. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------------------
+\subsection{Algoritmo del bucle DES}
+% ---------------------------------------------------------------------------
+
+El \cref{alg:des} muestra el bucle principal de simulación, fiel al
+algoritmo de avance de tiempo por próximo evento descrito
+en~\citet{banks2010discrete}.
+
+\begin{algorithm}[H]
+\caption{Bucle principal de la simulación DES}
+\label{alg:des}
+\begin{algorithmic}[1]
+\Require configuración $\mathtt{cfg}$, streams $\mathtt{rng}$
+\Ensure \texttt{ReplicationResult} con métricas del día
+\State Crear empleados base; programar primera \textsc{llegada} y eventos de pico
+\While{la lista de eventos futuros (FEL) no está vacía}
+  \State $e \gets$ extraer evento de mínimo tiempo de la FEL
+  \State Avanzar el reloj: $t \gets e.\mathtt{time}$
+  \If{$e$ es \textsc{llegada}}
+    \State Sortear tipo de cliente y $s \gets$ tiempo de servicio (Transformada Inversa)
+    \State Crear cliente con $\mathtt{arrival\_time} = t$, $\mathtt{service\_time} = s$
+    \If{existe servidor libre}
+      \State Asignar cliente al servidor; programar \textsc{partida} en $t + s$
+    \Else
+      \State Encolar cliente; registrar cambio de cola
+    \EndIf
+    \State Programar siguiente \textsc{llegada} en $t + \operatorname{Exp}(\lambda(t))$
+  \ElsIf{$e$ es \textsc{partida}}
+    \State Liberar servidor; registrar $\mathtt{departure\_time} = t$
+    \If{cola no vacía \textbf{y} $t \le T$}
+      \State Desencolar siguiente cliente; asignarlo; programar \textsc{partida}
+    \EndIf
+  \ElsIf{$e$ es \textsc{inicio\_pico} \textbf{y} $\mathtt{extra\_staff} > 0$}
+    \State Crear empleado extra; si hay cola, asignarle cliente inmediatamente
+  \ElsIf{$e$ es \textsc{fin\_pico} \textbf{y} $\mathtt{extra\_staff} > 0$}
+    \State Marcar empleado extra para retiro (o retirar si está libre)
+  \EndIf
+\EndWhile
+\State \Return $\mathtt{MetricsCollector.summarize}()$
+\end{algorithmic}
+\end{algorithm}
+
+% ---------------------------------------------------------------------------
+\subsection{Proceso de Poisson no homogéneo}
+% ---------------------------------------------------------------------------
+
+El proceso de llegadas es un proceso de Poisson no homogéneo con función de
+intensidad por tramos constantes \citep{curso_conf2}:
+\[
+  \lambda(t) = \begin{cases}
+    0{,}30 & \text{si } t \in [90,210) \cup [420,540), \\
+    0{,}17 & \text{en otro caso.}
+  \end{cases}
+\]
+En la implementación, cada evento \textsc{llegada} programa el siguiente
+usando $\lambda(t_{\text{actual}})$: en cuanto el reloj supera una frontera
+de pico, la siguiente llegada ya utiliza la tasa correcta.
+
+% ---------------------------------------------------------------------------
+\subsection{Cálculo de la longitud media de cola}
+% ---------------------------------------------------------------------------
+
+La longitud media de cola se estima como el cociente entre el área bajo la
+curva $Q(t)$ (número de clientes en cola en el instante $t$) y la duración
+del día $T = 660$ min:
+\begin{equation}
+  \bar{L}_q = \frac{1}{T}\int_0^T Q(t)\,dt
+  \approx \frac{1}{T}\sum_k Q(t_k)\,(t_{k+1} - t_k),
+  \label{eq:area_cola}
+\end{equation}
+donde la suma es una integral de Riemann por rectángulos actualizada en cada
+evento de cambio de cola.
+Este estimador es equivalente al que se obtiene aplicando la Ley de
+Little~\citep{little1961proof}: $L_q = \lambda\,W_q$.
+
+% ---------------------------------------------------------------------------
+\subsection{Protocolo de réplicas y parada}
+% ---------------------------------------------------------------------------
+
+Se ejecutan $n = 30$ réplicas independientes para cada escenario.
+La semilla de la réplica $i$ es $s_i = 42 + i \times 10^5$, garantizando
+una separación mayor que el consumo por réplica (${\approx}600$ números).
+El criterio de parada formal propuesto en~\citet{curso_temas} (cap.~4) es:
+\begin{equation}
+  \frac{S}{\sqrt{n}} < d,
+  \label{eq:parada_temas}
+\end{equation}
+donde $d$ es la desviación estándar máxima admisible para el estimador.
+Este criterio se analiza en detalle en la \cref{sec:parada}.
