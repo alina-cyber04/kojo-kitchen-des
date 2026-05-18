@@ -7,6 +7,7 @@
 % ── Codificación y lengua ────────────────────────────────────────────────────
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage[spanish]{babel}
 
 % ── Geometría ────────────────────────────────────────────────────────────────
@@ -96,6 +97,9 @@
 % =============================================================================
 
 % ── Portada ───────────────────────────────────────────────────────────────────
+% Evita el warning "duplicate destination page.1" de hyperref al combinar
+% pagenumbering roman (TOC) y arabic (contenido) en el mismo documento.
+\hypersetup{pageanchor=false}
 \begin{titlepage}
   \centering
   \vspace*{2cm}
@@ -107,17 +111,28 @@
   {\large Informe del Proyecto\par}
   \rule{\linewidth}{0.5pt}\\[1.5cm]
   {\large Asignatura: Simulación\par}
+  \vspace{0.4cm}
+  {\normalsize Problema No.\ 1: La Cocina de Kojo (Kojo's Kitchen)\par}
   \vspace{1cm}
   {\normalsize Facultad de Matemática y Computación\\
    Universidad de La Habana\par}
-  \vspace{2cm}
-  {\normalsize\today\par}
+  \vspace{1cm}
+  {\normalsize Alumna: Alina María de la Noval Armenteros\par}
+  \vspace{0.3cm}
+  {\normalsize Grupo: C-311\par}
+  \vspace{0.3cm}
+  {\normalsize \url{https://github.com/alina-cyber04/kojo-kitchen-des}\par}
+  \vspace{0.7cm}
+  {\normalsize 8 de mayo de 2026\par}
   \vfill
 \end{titlepage}
 
 % ── Tabla de contenidos ───────────────────────────────────────────────────────
+\pagenumbering{roman}
 \tableofcontents
 \newpage
+\hypersetup{pageanchor=true}
+\pagenumbering{arabic}
 
 % ── Secciones ─────────────────────────────────────────────────────────────────
 \input{sections/01_introduccion}

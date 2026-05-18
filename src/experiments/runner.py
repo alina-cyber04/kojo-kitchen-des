@@ -11,7 +11,15 @@ _REPLICATION_GAP = 100_000
 
 
 def run_replication(config: SimulationConfig, seed: int) -> ReplicationResult:
-    """Simula un día completo con la seed dada y devuelve sus métricas."""
+    """Simula un día completo con la semilla dada y devuelve sus métricas.
+
+    Args:
+        config: Parámetros del modelo para esta réplica.
+        seed: Semilla base para los tres streams de números aleatorios.
+
+    Returns:
+        Indicadores de rendimiento del día simulado.
+    """
     streams = RngStreams.from_seed(seed)
     return KojoKitchen(config, streams).run()
 
@@ -23,8 +31,16 @@ def run_experiment(
 ) -> list[ReplicationResult]:
     """Corre n réplicas independientes y devuelve la lista de resultados.
 
-    Cada réplica usa seed = base_seed + i * _REPLICATION_GAP, garantizando
+    Cada réplica i usa seed = base_seed + i * _REPLICATION_GAP, garantizando
     independencia estadística entre observaciones.
+
+    Args:
+        config: Parámetros del modelo compartidos por todas las réplicas.
+        n_replications: Número de réplicas a ejecutar.
+        base_seed: Semilla de la primera réplica.
+
+    Returns:
+        Lista de n_replications resultados, uno por réplica.
     """
     return [
         run_replication(config, base_seed + i * _REPLICATION_GAP)

@@ -33,13 +33,13 @@ Con probabilidad $p = 0{,}5$ el cliente pide sándwich
 ($S_{\text{sand}} \sim \mathcal{U}[3,5]$) y con probabilidad $1-p = 0{,}5$
 pide sushi ($S_{\text{sush}} \sim \mathcal{U}[5,8]$).
 La esperanza del tiempo de servicio es:
-\begin{equation}
-  \EE[S] = p\,\EE[S_{\text{sand}}] + (1-p)\,\EE[S_{\text{sush}}]
-         = 0{,}5 \cdot \frac{3+5}{2} + 0{,}5 \cdot \frac{5+8}{2}
-         = 0{,}5 \times 4 + 0{,}5 \times 6{,}5
-         = \mathbf{5{,}25} \text{ min.}
+\begin{align}
+  \EE[S] &= p\,\EE[S_{\text{sand}}] + (1-p)\,\EE[S_{\text{sush}}] \nonumber \\
+         &= 0{,}5 \cdot \tfrac{3+5}{2} + 0{,}5 \cdot \tfrac{5+8}{2}
+          = 0{,}5 \times 4 + 0{,}5 \times 6{,}5
+          = \mathbf{5{,}25} \text{ min.}
   \label{eq:ES}
-\end{equation}
+\end{align}
 
 La tasa de servicio de un empleado es:
 \[
@@ -131,7 +131,7 @@ Por la Ley de Little~\citep{little1961proof}:
 
 Los resultados se muestran en la \cref{tab:teoria_vs_sim}.
 Los valores teóricos se calculan como media ponderada por tiempo de los dos períodos
-del día: $W_q^{\text{día}} = \frac{240}{660}\,W_q^{\text{pico}} + \frac{420}{660}\,W_q^{\text{fuera}}$,
+del día: $W_q^{\text{día}} = \frac{240}{660}\,W_q^{\text{peak}} + \frac{420}{660}\,W_q^{\text{off-peak}}$,
 con $\lambda_{\text{eff}} = \frac{240 \times 0{,}30 + 420 \times 0{,}17}{660} = 0{,}217$ clientes/min.
 
 \begin{table}[H]
@@ -139,17 +139,18 @@ con $\lambda_{\text{eff}} = \frac{240 \times 0{,}30 + 420 \times 0{,}17}{660} = 
   \caption{Comparación teoría M/M/$c$ vs.\ simulación ---
            media ponderada del día completo.}
   \label{tab:teoria_vs_sim}
+  \small
   \begin{tabular}{llccc}
     \toprule
     \textbf{Escenario} & \textbf{Indicador}
       & \textbf{M/M/$c$ teórico}
-      & \textbf{Simulación (media)}
+      & \textbf{Sim.\ (media)}
       & \textbf{Sim $-$ Teo (\%)} \\
     \midrule
-    A ($c_{\text{pico}}=2$) & $W_q$ (min)      & 3{,}95 & 2{,}19 & $-$44{,}6 \\
-    A ($c_{\text{pico}}=2$) & $L_q$ (clientes) & 0{,}86 & 0{,}48 & $-$44{,}2 \\
-    B ($c_{\text{pico}}=3$) & $W_q$ (min)      & 1{,}18 & 0{,}66 & $-$44{,}1 \\
-    B ($c_{\text{pico}}=3$) & $L_q$ (clientes) & 0{,}26 & 0{,}15 & $-$42{,}3 \\
+    A ($c_{\text{peak}}=2$) & $W_q$ (min)      & 3{,}95 & 2{,}19 & $-$44{,}6 \\
+    A ($c_{\text{peak}}=2$) & $L_q$ (clientes) & 0{,}86 & 0{,}48 & $-$44{,}2 \\
+    B ($c_{\text{peak}}=3$) & $W_q$ (min)      & 1{,}18 & 0{,}66 & $-$44{,}1 \\
+    B ($c_{\text{peak}}=3$) & $L_q$ (clientes) & 0{,}26 & 0{,}15 & $-$42{,}3 \\
     \bottomrule
   \end{tabular}
 \end{table}

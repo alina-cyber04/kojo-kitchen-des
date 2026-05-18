@@ -9,16 +9,17 @@ from src.model.customer import Customer
 class Employee:
     """Recurso servidor del sistema Kojo's Kitchen.
 
-    Encapsula el estado de un empleado individual:
-        is_busy            : True si esta atendiendo a alguien ahora
-        current_customer   : referencia al cliente que atiende actualmente
-        marked_for_removal : True si debe retirarse al terminar el servicio actual
-                             (exclusivo del Escenario B al finalizar hora pico)
-        customers_served   : contador acumulado de clientes atendidos
-        total_busy_time    : minutos totales ocupado (para calcular utilizacion)
+    Encapsula el estado de un empleado individual y acumula estadísticas
+    de ocupación para calcular la utilización al final de cada réplica.
 
-    El campo _busy_since es privado — registra cuando inicio el servicio actual
-    para poder acumular total_busy_time correctamente en release().
+    Attributes:
+        employee_id: Identificador único del empleado.
+        is_busy: True si el empleado está atendiendo a un cliente en este momento.
+        current_customer: Referencia al cliente en atención; None si está libre.
+        marked_for_removal: True cuando el empleado debe retirarse al terminar
+            el servicio actual (solo empleados extra al finalizar hora pico).
+        customers_served: Cantidad acumulada de clientes atendidos.
+        total_busy_time: Minutos totales en estado ocupado.
     """
 
     employee_id:        int
@@ -32,7 +33,9 @@ class Employee:
     def assign(self, customer: Customer, t: float) -> None:
         """Asigna un cliente a este empleado e inicia el servicio.
 
-        Registra t como inicio del servicio para acumular busy_time en release().
+        Args:
+            customer: Cliente que comienza a ser atendido.
+            t: Tiempo de inicio del servicio en minutos desde la apertura.
         """
         self.is_busy = True
         self.current_customer = customer
@@ -42,8 +45,14 @@ class Employee:
     def release(self, t: float) -> Customer:
         """Libera al empleado al terminar el servicio del cliente actual.
 
-        Acumula el tiempo ocupado en total_busy_time y devuelve el cliente
-        que acaba de ser atendido para que el motor registre su departure_time.
+        Acumula el intervalo ocupado en total_busy_time y resetea el estado
+        para que el empleado quede disponible para el siguiente cliente.
+
+        Args:
+            t: Tiempo de finalización del servicio en minutos.
+
+        Returns:
+            El cliente que acaba de ser atendido.
         """
         if self._busy_since is not None:
             self.total_busy_time += t - self._busy_since
@@ -56,7 +65,14 @@ class Employee:
         return customer
 
     def utilization(self, duration: float) -> float:
-        """Fraccion del tiempo total que el empleado estuvo ocupado. Entre 0 y 1."""
+        """Devuelve la fracción del tiempo total que el empleado estuvo ocupado.
+
+        Args:
+            duration: Duración total del día en minutos.
+
+        Returns:
+            Valor en [0, 1]; 0.0 si duration es no positivo.
+        """
         if duration <= 0:
             return 0.0
         return self.total_busy_time / duration

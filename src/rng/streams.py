@@ -14,17 +14,14 @@ _STREAM_GAP = 1_000_000
 class RngStreams:
     """Agrupa los tres streams independientes que necesita la simulacion.
 
-    Cada stream es un LCG con su propia semilla — secuencias distintas
-    que nunca se mezclan entre si:
+    Cada stream es un LCG con su propia semilla, separados por _STREAM_GAP
+    posiciones para garantizar que sus secuencias no se solapan durante un
+    día simulado (~200 clientes × 3 streams = 600 números por réplica).
 
-        arrivals : tiempos entre llegadas sucesivas de clientes
-        type     : decide si cada cliente quiere sandwich o sushi
-        service  : duracion de preparacion de cada pedido
-
-    El stream service se consume en orden de llegada (el k-esimo cliente
-    dibuja su service_time al llegar y lo guarda en Customer.service_time).
-    Esto garantiza CRN: ambos escenarios usan el mismo service_time para
-    el mismo cliente sin importar cuando empiece a ser atendido.
+    Attributes:
+        arrivals: Stream para los tiempos entre llegadas sucesivas de clientes.
+        type: Stream para determinar el tipo de pedido de cada cliente.
+        service: Stream para la duración de preparación de cada pedido.
     """
 
     arrivals: LCG
@@ -35,8 +32,12 @@ class RngStreams:
     def from_seed(cls, base_seed: int) -> RngStreams:
         """Construye los tres streams a partir de una semilla base.
 
-        Los streams quedan separados por _STREAM_GAP posiciones en el
-        espacio de semillas para evitar solapamientos en la practica.
+        Args:
+            base_seed: Semilla del stream de llegadas; los otros streams
+                usan base_seed + k·_STREAM_GAP para garantizar independencia.
+
+        Returns:
+            Instancia con los tres LCGs inicializados.
         """
         return cls(
             arrivals = LCG(seed=base_seed),

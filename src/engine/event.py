@@ -6,21 +6,22 @@ _counter = count()
 
 
 class EventType(Enum):
-    LLEGADA        = "LLEGADA"
-    PARTIDA        = "PARTIDA"
-    INICIO_PICO    = "INICIO_PICO"
-    FIN_PICO       = "FIN_PICO"
-    FIN_SIMULACION = "FIN_SIMULACION"
+    ARRIVAL    = "ARRIVAL"
+    DEPARTURE  = "DEPARTURE"
+    PEAK_START = "PEAK_START"
+    PEAK_END   = "PEAK_END"
+    END_OF_DAY = "END_OF_DAY"
 
 
 @dataclass
 class Event:
     """Un instante en el tiempo donde algo cambia en el sistema.
 
-    time       : minutos desde apertura (0 = 10:00am, 660 = 9:00pm)
-    event_type : que tipo de evento ocurre
-    data       : informacion adicional (cliente_id, empleado_id, etc.)
-    _seq       : orden de creacion — desempata eventos con igual tiempo
+    Attributes:
+        time: Minutos desde la apertura (0 = 10:00 am, 660 = 9:00 pm).
+        event_type: Tipo de evento que ocurre en este instante.
+        data: Payload opcional con referencias a entidades (empleado, cliente).
+        _seq: Número de creación; desempata eventos con el mismo tiempo.
     """
     time:       float
     event_type: EventType

@@ -5,9 +5,9 @@ from src.engine.scheduler import EventScheduler
 
 
 def test_event_order_by_time_then_seq() -> None:
-	e1 = Event(time=5.0, event_type=EventType.LLEGADA)
-	e2 = Event(time=5.0, event_type=EventType.LLEGADA)
-	e3 = Event(time=3.0, event_type=EventType.LLEGADA)
+	e1 = Event(time=5.0, event_type=EventType.ARRIVAL)
+	e2 = Event(time=5.0, event_type=EventType.ARRIVAL)
+	e3 = Event(time=3.0, event_type=EventType.ARRIVAL)
 
 	assert e3 < e1
 	# Same time uses creation order for tie-break.
@@ -16,8 +16,8 @@ def test_event_order_by_time_then_seq() -> None:
 
 def test_scheduler_advances_now_and_orders() -> None:
 	scheduler = EventScheduler()
-	scheduler.schedule(Event(10.0, EventType.LLEGADA))
-	scheduler.schedule(Event(5.0, EventType.LLEGADA))
+	scheduler.schedule(Event(10.0, EventType.ARRIVAL))
+	scheduler.schedule(Event(5.0, EventType.ARRIVAL))
 
 	assert scheduler.peek_time() == 5.0
 	event = scheduler.next_event()

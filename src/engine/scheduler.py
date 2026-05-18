@@ -7,12 +7,11 @@ from src.engine.event import Event
 class EventScheduler:
     """Lista de Eventos Futuros (FEL) implementada con un min-heap.
 
-    Responsabilidades:
-        - Mantener eventos ordenados por tiempo
-        - Avanzar el reloj al procesar cada evento
-        - Exponer API limpia: schedule / next_event / peek_time / is_empty / now
+    Mantiene los eventos ordenados por tiempo y avanza el reloj de simulación
+    cada vez que se extrae un evento. No contiene lógica de dominio.
 
-    No contiene logica del problema — solo gestiona tiempo y orden.
+    Attributes:
+        now: Tiempo actual de simulación en minutos desde la apertura.
     """
 
     def __init__(self) -> None:
@@ -25,21 +24,37 @@ class EventScheduler:
         return self._now
 
     def schedule(self, event: Event) -> None:
-        """Inserta un evento en la FEL. O(log n)."""
+        """Inserta un evento en la FEL en O(log n).
+
+        Args:
+            event: Evento a planificar.
+        """
         heapq.heappush(self._heap, event)
 
     def next_event(self) -> Event:
-        """Extrae el evento mas proximo y avanza el reloj. O(log n)."""
+        """Extrae el evento más próximo y avanza el reloj en O(log n).
+
+        Returns:
+            El evento con el menor tiempo de entre los pendientes.
+        """
         event = heapq.heappop(self._heap)
         self._now = event.time
         return event
 
     def peek_time(self) -> Optional[float]:
-        """Tiempo del proximo evento sin extraerlo. O(1)."""
+        """Tiempo del próximo evento sin extraerlo en O(1).
+
+        Returns:
+            Tiempo del siguiente evento, o None si la FEL está vacía.
+        """
         return self._heap[0].time if self._heap else None
 
     def is_empty(self) -> bool:
-        """True si no quedan eventos pendientes."""
+        """Devuelve True si no quedan eventos pendientes.
+
+        Returns:
+            True cuando la FEL está vacía.
+        """
         return len(self._heap) == 0
 
     def __len__(self) -> int:

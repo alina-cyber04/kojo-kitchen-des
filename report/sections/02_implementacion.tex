@@ -21,12 +21,11 @@ La base del sistema estocástico es un \textbf{Generador Congruencial Lineal}
   X_{n+1} = (A \cdot X_n + C) \bmod M, \qquad U_n = \frac{X_n}{M},
   \label{eq:lcg}
 \end{equation}
-con los parámetros de Knuth usados también por la biblioteca estándar de C
-en Linux (glibc):
+con los parámetros popularizados por Press et al.\ en \textit{Numerical Recipes}~\citep{press2007numerical}:
 \[
   A = 1\,664\,525, \quad C = 1\,013\,904\,223, \quad M = 2^{32}.
 \]
-Estos parámetros satisfacen los criterios de Hull--Dobell para período
+Estos parámetros satisfacen los criterios de Hull--Dobell~\citep{knuth1997art} para período
 máximo igual a $M = 4\,294\,967\,296$, garantizando que la secuencia no se
 repite dentro de ninguna simulación práctica.
 
@@ -75,7 +74,7 @@ La inversión da:
 \end{equation}
 
 % ---------------------------------------------------------------------------
-\subsection{Streams independientes y Common Random Numbers (CRN)}
+\subsection[Streams independientes y Common Random Numbers (CRN)]{Streams independientes y\\ Common Random Numbers~(CRN)}
 % ---------------------------------------------------------------------------
 
 Para garantizar comparaciones estadísticamente válidas entre escenarios se
@@ -121,26 +120,26 @@ El modelo define cinco tipos de eventos, descritos en \cref{tab:eventos}.
     \toprule
     \textbf{Tipo} & \textbf{Descripción y acciones principales} \\
     \midrule
-    \textsc{llegada}        & Arribo de un nuevo cliente. Se determina su tipo
+    \texttt{ARRIVAL}        & Arribo de un nuevo cliente. Se determina su tipo
                               (Bernoulli) y su tiempo de servicio (Uniforme, al llegar).
                               Si hay servidor libre se asigna; si no, el cliente
                               entra a la cola FIFO.
                               Se programa la siguiente llegada. \\
     \addlinespace
-    \textsc{partida}        & Fin del servicio de un cliente. El servidor queda
+    \texttt{DEPARTURE}        & Fin del servicio de un cliente. El servidor queda
                               libre. Si la cola no está vacía se atiende al
                               siguiente cliente. Si el empleado está marcado
                               para retiro, se elimina. \\
     \addlinespace
-    \textsc{inicio\_pico}   & Comienzo de una hora pico. En el Escenario B se
+    \texttt{PEAK\_START}   & Comienzo de una hora pico. En el Escenario B se
                               añade el empleado extra; si hay cola, comienza a
                               atender de inmediato. \\
     \addlinespace
-    \textsc{fin\_pico}      & Fin de una hora pico. En el Escenario B el empleado
+    \texttt{PEAK\_END}      & Fin de una hora pico. En el Escenario B el empleado
                               extra es marcado para retiro si está ocupado, o
                               retirado inmediatamente si está libre. \\
     \addlinespace
-    \textsc{fin\_simulacion}& Cierre del día (t = 660 min). Los servicios en curso
+    \texttt{END\_OF\_DAY}& Cierre del día (t = 660 min). Los servicios en curso
                               se completan; los clientes en cola no reciben servicio. \\
     \bottomrule
   \end{tabular}
@@ -160,27 +159,27 @@ en~\citet{banks2010discrete}.
 \begin{algorithmic}[1]
 \Require configuración $\mathtt{cfg}$, streams $\mathtt{rng}$
 \Ensure \texttt{ReplicationResult} con métricas del día
-\State Crear empleados base; programar primera \textsc{llegada} y eventos de pico
+\State Crear empleados base; programar primera \texttt{ARRIVAL} y eventos de pico
 \While{la lista de eventos futuros (FEL) no está vacía}
   \State $e \gets$ extraer evento de mínimo tiempo de la FEL
   \State Avanzar el reloj: $t \gets e.\mathtt{time}$
-  \If{$e$ es \textsc{llegada}}
+  \If{$e$ es \texttt{ARRIVAL}}
     \State Sortear tipo de cliente y $s \gets$ tiempo de servicio (Transformada Inversa)
     \State Crear cliente con $\mathtt{arrival\_time} = t$, $\mathtt{service\_time} = s$
     \If{existe servidor libre}
-      \State Asignar cliente al servidor; programar \textsc{partida} en $t + s$
+      \State Asignar cliente al servidor; programar \texttt{DEPARTURE} en $t + s$
     \Else
       \State Encolar cliente; registrar cambio de cola
     \EndIf
-    \State Programar siguiente \textsc{llegada} en $t + \operatorname{Exp}(\lambda(t))$
-  \ElsIf{$e$ es \textsc{partida}}
+    \State Programar siguiente \texttt{ARRIVAL} en $t + \operatorname{Exp}(\lambda(t))$
+  \ElsIf{$e$ es \texttt{DEPARTURE}}
     \State Liberar servidor; registrar $\mathtt{departure\_time} = t$
     \If{cola no vacía \textbf{y} $t \le T$}
-      \State Desencolar siguiente cliente; asignarlo; programar \textsc{partida}
+      \State Desencolar siguiente cliente; asignarlo; programar \texttt{DEPARTURE}
     \EndIf
-  \ElsIf{$e$ es \textsc{inicio\_pico} \textbf{y} $\mathtt{extra\_staff} > 0$}
+  \ElsIf{$e$ es \texttt{PEAK\_START} \textbf{y} $\mathtt{extra\_staff} > 0$}
     \State Crear empleado extra; si hay cola, asignarle cliente inmediatamente
-  \ElsIf{$e$ es \textsc{fin\_pico} \textbf{y} $\mathtt{extra\_staff} > 0$}
+  \ElsIf{$e$ es \texttt{PEAK\_END} \textbf{y} $\mathtt{extra\_staff} > 0$}
     \State Marcar empleado extra para retiro (o retirar si está libre)
   \EndIf
 \EndWhile
@@ -200,7 +199,7 @@ intensidad por tramos constantes \citep{curso_conf2}:
     0{,}17 & \text{en otro caso.}
   \end{cases}
 \]
-En la implementación, cada evento \textsc{llegada} programa el siguiente
+En la implementación, cada evento \texttt{ARRIVAL} programa el siguiente
 usando $\lambda(t_{\text{actual}})$: en cuanto el reloj supera una frontera
 de pico, la siguiente llegada ya utiliza la tasa correcta.
 

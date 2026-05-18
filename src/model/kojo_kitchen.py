@@ -15,9 +15,17 @@ from src.rng.streams import RngStreams
 class KojoKitchen:
     """Motor principal de la simulación DES de Kojo's Kitchen.
 
-    Orquesta el bucle de eventos: llegadas, partidas, inicio/fin de hora pico
-    y cierre del día. Reutiliza el scheduler, las entidades y el colector ya
-    implementados; solo añade la lógica de dominio del restaurante.
+    Orquesta el bucle de eventos: llegadas, salidas, inicio y fin de hora
+    pico y cierre del día. Delega la gestión del tiempo en EventScheduler,
+    el estado de los servidores en Employee y la recolección de métricas
+    en MetricsCollector.
+
+    Attributes:
+        config: Parámetros del modelo (tasas, horarios, dotación).
+        streams: Generadores de números aleatorios para la réplica.
+        scheduler: Lista de eventos futuros (FEL).
+        metrics: Acumulador de variables de salida.
+        queue: Cola FIFO de clientes esperando ser atendidos.
     """
 
     def __init__(self, config: SimulationConfig, streams: RngStreams) -> None:
@@ -33,7 +41,11 @@ class KojoKitchen:
     # ── API pública ────────────────────────────────────────────────────
 
     def run(self) -> ReplicationResult:
-        """Simula un día completo y devuelve las métricas de la réplica."""
+        """Simula un día completo y devuelve las métricas de la réplica.
+
+        Returns:
+            Conjunto de indicadores de rendimiento para esta réplica.
+        """
         self._initialize()
         self._run_loop()
         return self.metrics.summarize(self.employees, self.config.day_duration)
@@ -52,21 +64,21 @@ class KojoKitchen:
 
         # Eventos de frontera de horas pico y cierre del día
         sched = self.scheduler
-        sched.schedule(Event(cfg.peak1_start,  EventType.INICIO_PICO))
-        sched.schedule(Event(cfg.peak1_end,    EventType.FIN_PICO))
-        sched.schedule(Event(cfg.peak2_start,  EventType.INICIO_PICO))
-        sched.schedule(Event(cfg.peak2_end,    EventType.FIN_PICO))
-        sched.schedule(Event(cfg.day_duration, EventType.FIN_SIMULACION))
+        sched.schedule(Event(cfg.peak1_start,  EventType.PEAK_START))
+        sched.schedule(Event(cfg.peak1_end,    EventType.PEAK_END))
+        sched.schedule(Event(cfg.peak2_start,  EventType.PEAK_START))
+        sched.schedule(Event(cfg.peak2_end,    EventType.PEAK_END))
+        sched.schedule(Event(cfg.day_duration, EventType.END_OF_DAY))
 
     # ── Bucle principal ────────────────────────────────────────────────
 
     def _run_loop(self) -> None:
         handlers = {
-            EventType.LLEGADA:        self._on_arrival,
-            EventType.PARTIDA:        self._on_departure,
-            EventType.INICIO_PICO:    self._on_peak_start,
-            EventType.FIN_PICO:       self._on_peak_end,
-            EventType.FIN_SIMULACION: self._on_end,
+            EventType.ARRIVAL:    self._on_arrival,
+            EventType.DEPARTURE:  self._on_departure,
+            EventType.PEAK_START: self._on_peak_start,
+            EventType.PEAK_END:   self._on_peak_end,
+            EventType.END_OF_DAY: self._on_end,
         }
         while not self.scheduler.is_empty():
             event = self.scheduler.next_event()
@@ -103,7 +115,7 @@ class KojoKitchen:
             # Servidor libre: atención inmediata
             free.assign(customer, t)
             self.scheduler.schedule(
-                Event(t + svc, EventType.PARTIDA, {"emp": free})
+                Event(t + svc, EventType.DEPARTURE, {"emp": free})
             )
         else:
             # Todos ocupados: cliente entra a la cola FIFO
@@ -127,7 +139,7 @@ class KojoKitchen:
             self.metrics.record_queue_change(len(self.queue), t)
             emp.assign(nxt, t)
             self.scheduler.schedule(
-                Event(t + nxt.service_time, EventType.PARTIDA, {"emp": emp})
+                Event(t + nxt.service_time, EventType.DEPARTURE, {"emp": emp})
             )
         elif emp.marked_for_removal:
             # Empleado extra que esperaba terminar su servicio para irse
@@ -154,7 +166,7 @@ class KojoKitchen:
                 self.metrics.record_queue_change(len(self.queue), t)
                 emp.assign(cust, t)
                 self.scheduler.schedule(
-                    Event(t + cust.service_time, EventType.PARTIDA, {"emp": emp})
+                    Event(t + cust.service_time, EventType.DEPARTURE, {"emp": emp})
                 )
 
     def _on_peak_end(self, event: Event) -> None:
@@ -169,15 +181,21 @@ class KojoKitchen:
         self._extra_employees.clear()
 
     def _on_end(self, event: Event) -> None:
-        # Los PARTIDA ya programados antes del cierre se procesan normalmente.
+        # Los DEPARTURE ya programados antes del cierre se procesan normalmente.
         # Clientes en cola al cierre no reciben servicio (filtrado en summarize).
         pass
 
     # ── Helpers ────────────────────────────────────────────────────────
 
     def _schedule_next_arrival(self, t: float) -> None:
-        """Programa la próxima llegada usando la tasa vigente en t."""
+        """Programa la próxima llegada usando la tasa vigente en t.
+
+        Descarta la llegada si cae después del cierre del día.
+
+        Args:
+            t: Tiempo actual de simulación en minutos.
+        """
         inter = exponential(self.streams.arrivals, self.config.lambda_at(t))
         next_t = t + inter
         if next_t < self.config.day_duration:
-            self.scheduler.schedule(Event(next_t, EventType.LLEGADA))
+            self.scheduler.schedule(Event(next_t, EventType.ARRIVAL))

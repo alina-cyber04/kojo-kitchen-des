@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Optional
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
@@ -48,7 +50,16 @@ plt.rcParams.update(_STYLE)
 # ── Helpers privados ─────────────────────────────────────────────────────────
 
 def _save(fig: plt.Figure, output_dir: str | Path, name: str) -> Path:
-    """Guarda la figura en output_dir/name.png a 300 DPI y devuelve la ruta."""
+    """Guarda la figura en output_dir/name.png a 300 DPI y devuelve la ruta.
+
+    Args:
+        fig: Figura de matplotlib a guardar.
+        output_dir: Directorio de destino; se crea si no existe.
+        name: Nombre del archivo sin extensión.
+
+    Returns:
+        Ruta absoluta del archivo PNG generado.
+    """
     path = Path(output_dir) / f"{name}.png"
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path)
@@ -57,7 +68,16 @@ def _save(fig: plt.Figure, output_dir: str | Path, name: str) -> Path:
 
 
 def _error_bars(mean: float, lo: float, hi: float) -> tuple[float, float]:
-    """Convierte (mean, lo, hi) al formato [[below], [above]] de matplotlib."""
+    """Convierte (mean, lo, hi) al formato (below, above) que espera matplotlib.
+
+    Args:
+        mean: Valor central del intervalo.
+        lo: Límite inferior del intervalo.
+        hi: Límite superior del intervalo.
+
+    Returns:
+        Tupla (mean - lo, hi - mean) con las semi-anchuras inferior y superior.
+    """
     return mean - lo, hi - mean
 
 
@@ -69,9 +89,18 @@ def plot_comparison_bars(
     comparison: dict,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Figure:
-    """Barras de % > 5 min para A y B con barras de error = IC 95%.
+    """Barras de % > 5 min para A y B con barras de error = IC 95 %.
 
     Añade la línea de significancia estadística y el p-value sobre las barras.
+
+    Args:
+        summary_a: Resumen estadístico del Escenario A (de summarize_results).
+        summary_b: Resumen estadístico del Escenario B.
+        comparison: Resultado del t-test pareado (de compare_scenarios).
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+
+    Returns:
+        Figura de matplotlib con el gráfico generado.
     """
     standalone = ax is None
     if standalone:
@@ -124,7 +153,15 @@ def plot_wait_boxplots(
     results: dict[str, list[ReplicationResult]],
     ax: Optional[plt.Axes] = None,
 ) -> plt.Figure:
-    """Box plots (con notches = IC 95% de la mediana) de avg_wait_time."""
+    """Box plots con notches (IC 95 % de la mediana) de avg_wait_time.
+
+    Args:
+        results: Diccionario con claves "A" y "B" y listas de resultados.
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+
+    Returns:
+        Figura de matplotlib con el gráfico generado.
+    """
     standalone = ax is None
     if standalone:
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -170,8 +207,15 @@ def plot_convergence(
 ) -> plt.Figure:
     """Media acumulada de pct_over_5min réplica a réplica para A y B.
 
-    Muestra visualmente cuándo el estimador se estabiliza.
-    Conecta con stopping_analysis() de statistics.py.
+    Muestra visualmente en qué réplica el estimador se estabiliza, lo que
+    apoya el análisis de parada de la simulación.
+
+    Args:
+        results: Diccionario con claves "A" y "B" y listas de resultados.
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+
+    Returns:
+        Figura de matplotlib con el gráfico generado.
     """
     standalone = ax is None
     if standalone:
@@ -223,7 +267,16 @@ def plot_utilization(
     summary_b: dict,
     ax: Optional[plt.Axes] = None,
 ) -> plt.Figure:
-    """Utilización media de empleados con IC 95% para A y B."""
+    """Utilización media de empleados con IC 95 % para A y B.
+
+    Args:
+        summary_a: Resumen estadístico del Escenario A (de summarize_results).
+        summary_b: Resumen estadístico del Escenario B.
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+
+    Returns:
+        Figura de matplotlib con el gráfico generado.
+    """
     standalone = ax is None
     if standalone:
         fig, ax = plt.subplots(figsize=(5, 4))
@@ -273,7 +326,15 @@ def plot_replication_traces(
 ) -> plt.Figure:
     """Scatter de pct_over_5min por réplica con media como línea gruesa.
 
-    Muestra la variabilidad real entre réplicas (patrón DES RAP Book).
+    Permite visualizar la variabilidad entre réplicas y el IC 95 % como
+    banda sombreada alrededor de la media estimada.
+
+    Args:
+        results: Diccionario con claves "A" y "B" y listas de resultados.
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+
+    Returns:
+        Figura de matplotlib con el gráfico generado.
     """
     standalone = ax is None
     if standalone:
@@ -317,12 +378,21 @@ def plot_sensitivity(
     n_reps: int = 10,
     base_seed: int = 42,
 ) -> plt.Figure:
-    """Variación de λ_pico de 0.10 a 0.50 y su impacto en % > 5 min.
+    """Variación de lambda_peak de 0.10 a 0.50 y su impacto en % > 5 min.
 
-    Responde: ¿a partir de qué tasa de llegada deja de ser suficiente
-    el tercer empleado? Obligatorio por sim_proy_1.md.
+    Identifica a partir de qué tasa de llegada en hora pico el tercer
+    empleado del Escenario B deja de ser suficiente para mantener la
+    insatisfacción por debajo del 10 %.
 
-    n_reps: réplicas por punto (10 es suficiente para la tendencia).
+    Args:
+        output_dir: Directorio de salida (no usado directamente; se pasa
+            por coherencia con generate_all_plots).
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+        n_reps: Réplicas por punto de la grilla de lambda.
+        base_seed: Semilla base para todas las réplicas.
+
+    Returns:
+        Figura de matplotlib con el análisis de sensibilidad.
     """
     standalone = ax is None
     if standalone:
@@ -377,7 +447,80 @@ def plot_sensitivity(
     return fig
 
 
-# ── Figura 7 — Dashboard 2×2 (figura principal del informe) ──────────────────
+# ── Figura 7 — Sensibilidad a λ_fuera_pico ───────────────────────────────────
+
+def plot_sensitivity_offpeak(
+    output_dir: str | Path,
+    ax: Optional[plt.Axes] = None,
+    n_reps: int = 10,
+    base_seed: int = 42,
+) -> plt.Figure:
+    """Variación de lambda_off_peak de 0.05 a 0.35 y su impacto en % > 5 min.
+
+    Complementa el análisis de lambda_peak: muestra si la demanda fuera de
+    hora pico también incide en la elección de política de personal.
+
+    Args:
+        output_dir: Directorio de salida (no usado directamente; se pasa
+            por coherencia con generate_all_plots).
+        ax: Eje de matplotlib opcional; si es None se crea una figura nueva.
+        n_reps: Réplicas por punto de la grilla de lambda.
+        base_seed: Semilla base para todas las réplicas.
+
+    Returns:
+        Figura de matplotlib con el análisis de sensibilidad.
+    """
+    standalone = ax is None
+    if standalone:
+        fig, ax = plt.subplots(figsize=(6, 4))
+    else:
+        fig = ax.get_figure()
+
+    lambdas = np.arange(0.05, 0.37, 0.05)
+    means_a, means_b = [], []
+    ci_lo_a, ci_hi_a = [], []
+    ci_lo_b, ci_hi_b = [], []
+
+    for lam in lambdas:
+        cfg_a = SimulationConfig(lambda_off_peak=float(lam), base_staff=2, extra_staff=0)
+        cfg_b = SimulationConfig(lambda_off_peak=float(lam), base_staff=2, extra_staff=1)
+
+        res_a = run_experiment(cfg_a, n_reps, base_seed)
+        res_b = run_experiment(cfg_b, n_reps, base_seed)
+
+        pct_a = [r.pct_over_5min for r in res_a]
+        pct_b = [r.pct_over_5min for r in res_b]
+
+        m_a, lo_a, hi_a = confidence_interval(pct_a)
+        m_b, lo_b, hi_b = confidence_interval(pct_b)
+
+        means_a.append(m_a); ci_lo_a.append(lo_a); ci_hi_a.append(hi_a)
+        means_b.append(m_b); ci_lo_b.append(lo_b); ci_hi_b.append(hi_b)
+
+    lambdas = lambdas.tolist()
+
+    ax.plot(lambdas, means_a, color=COLOR_A, marker="o",
+            markersize=4, label="Escenario A (2 emp.)")
+    ax.plot(lambdas, means_b, color=COLOR_B, marker="s",
+            markersize=4, label="Escenario B (2+1 pico)")
+
+    ax.fill_between(lambdas, ci_lo_a, ci_hi_a, color=COLOR_A, alpha=0.15)
+    ax.fill_between(lambdas, ci_lo_b, ci_hi_b, color=COLOR_B, alpha=0.15)
+
+    ax.axvline(0.17, color="gray", linestyle="--", linewidth=1.2,
+               label="λ del problema (0.17)")
+
+    ax.set_xlabel("λ fuera de pico (clientes/min)")
+    ax.set_ylabel("% clientes con espera > 5 min")
+    ax.set_title("Sensibilidad a la tasa de llegada fuera de hora pico")
+    ax.legend(fontsize=8)
+
+    if standalone:
+        fig.tight_layout()
+    return fig
+
+
+# ── Figura 8 — Dashboard 2×2 (figura principal del informe) ──────────────────
 
 def plot_dashboard(
     results: dict[str, list[ReplicationResult]],
@@ -385,7 +528,17 @@ def plot_dashboard(
     summary_b: dict,
     comparison: dict,
 ) -> plt.Figure:
-    """Figura 2×2 con las 4 métricas principales. Figura principal del informe."""
+    """Figura 2×2 con las 4 métricas principales del análisis comparativo.
+
+    Args:
+        results: Diccionario con claves "A" y "B" y listas de resultados.
+        summary_a: Resumen estadístico del Escenario A.
+        summary_b: Resumen estadístico del Escenario B.
+        comparison: Resultado del t-test pareado.
+
+    Returns:
+        Figura de matplotlib con los cuatro subplots.
+    """
     fig, axes = plt.subplots(2, 2, figsize=(12, 9))
     fig.suptitle(
         "La Cocina de Kojo — Análisis Comparativo de Escenarios (n = 30 réplicas)",
@@ -407,9 +560,14 @@ def generate_all_plots(
     results: dict[str, list[ReplicationResult]],
     output_dir: str | Path = "report/figures",
 ) -> list[Path]:
-    """Genera las 6 figuras y las guarda en output_dir.
+    """Genera las 7 figuras del informe y las guarda en output_dir.
 
-    Returns lista de rutas de los archivos generados.
+    Args:
+        results: Diccionario con claves "A" y "B" y listas de resultados.
+        output_dir: Directorio de destino de los archivos PNG.
+
+    Returns:
+        Lista de rutas de los 7 archivos PNG generados.
     """
     from src.analysis.statistics import compare_scenarios as _compare
 
@@ -420,40 +578,46 @@ def generate_all_plots(
 
     saved: list[Path] = []
 
-    print("  [1/6] Dashboard 2×2...")
+    print("  [1/7] Dashboard 2x2...")
     saved.append(_save(
         plot_dashboard(results, summary_a, summary_b, comparison),
         output_dir, "dashboard",
     ))
 
-    print("  [2/6] Barras comparativas...")
+    print("  [2/7] Barras comparativas...")
     saved.append(_save(
         plot_comparison_bars(summary_a, summary_b, comparison),
         output_dir, "comparison_bars",
     ))
 
-    print("  [3/6] Box plots de tiempos de espera...")
+    print("  [3/7] Box plots de tiempos de espera...")
     saved.append(_save(
         plot_wait_boxplots(results),
         output_dir, "wait_boxplots",
     ))
 
-    print("  [4/6] Convergencia del estimador...")
+    print("  [4/7] Convergencia del estimador...")
     saved.append(_save(
         plot_convergence(results),
         output_dir, "convergence",
     ))
 
-    print("  [5/6] Trayectorias individuales de réplicas...")
+    print("  [5/7] Trayectorias individuales de replicas...")
     saved.append(_save(
         plot_replication_traces(results),
         output_dir, "replication_traces",
     ))
 
-    print("  [6/6] Analisis de sensibilidad (lambda_pico)...")
+    print("  [6/7] Analisis de sensibilidad (lambda_pico)...")
     saved.append(_save(
         plot_sensitivity(output_dir),
         output_dir, "sensitivity",
+    ))
+
+    print("  [7/7] Analisis de sensibilidad (lambda_fuera_pico)...")
+    saved.append(_save(
+        plot_sensitivity_offpeak(output_dir),
+        output_dir, "sensitivity_offpeak",
     ))
 
     return saved

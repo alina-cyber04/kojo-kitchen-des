@@ -1,5 +1,8 @@
 # La Cocina de Kojo — Simulación de Eventos Discretos
 
+**Autora:** Alina María de la Noval Armenteros
+**Asignatura:** Simulación de Eventos Discretos — Facultad de Matemática y Computación, Universidad de La Habana
+
 Proyecto académico de simulación de eventos discretos (DES) para comparar
 dos políticas de personal en un puesto de comida rápida.
 
@@ -34,7 +37,7 @@ src/
   model/        → KojoKitchen, Customer, Employee, SimulationConfig
   metrics/      → MetricsCollector + ReplicationResult
   experiments/  → runner (réplicas independientes) + scenarios (CRN)
-  analysis/     → statistics (IC, t-test, parada) + plots (6 figuras)
+  analysis/     → statistics (IC, t-test, parada) + plots (7 figuras)
 report/
   main.tex      → informe LaTeX
   main.pdf      → informe compilado
@@ -48,7 +51,12 @@ main.py         → punto de entrada
 El informe completo (LaTeX + PDF compilado) está en `report/`.
 Secciones: Introducción · Implementación · Resultados · Modelo Matemático · Conclusiones.
 
-## Asignatura
+Para compilar el LaTeX desde cero (requiere una distribución TeX como MiKTeX o TeX Live):
 
-Simulación de Eventos Discretos — Facultad de Matemática y Computación,
-Universidad de La Habana.
+```bash
+cd report
+pdflatex main.tex
+bibtex main
+pdflatex main.tex
+pdflatex main.tex
+```

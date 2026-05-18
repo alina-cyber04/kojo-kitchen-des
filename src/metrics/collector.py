@@ -10,7 +10,18 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class ReplicationResult:
-    """Resultado de una réplica: una fila de datos por día simulado."""
+    """Resultado de una réplica: una fila de indicadores por día simulado.
+
+    Attributes:
+        total_customers: Total de clientes que llegaron durante el día.
+        customers_over_5min: Clientes que esperaron más de 5 minutos en cola.
+        pct_over_5min: Porcentaje de clientes con espera superior a 5 minutos.
+        avg_wait_time: Tiempo de espera medio en cola (minutos).
+        max_wait_time: Tiempo de espera máximo registrado (minutos).
+        avg_service_time: Duración media de preparación por cliente (minutos).
+        employee_utilizations: Fracción de tiempo ocupado por cada empleado.
+        avg_queue_length: Longitud media de la cola (integral de área / duración).
+    """
 
     total_customers:        int
     customers_over_5min:    int
@@ -32,13 +43,23 @@ class MetricsCollector:
         self._last_t:        float = 0.0
 
     def record_arrival(self, customer: Customer, t: float) -> None:
-        """Registra la llegada de un nuevo cliente."""
+        """Registra la llegada de un nuevo cliente.
+
+        Args:
+            customer: Cliente que acaba de entrar al sistema.
+            t: Tiempo de llegada en minutos.
+        """
         self._customers.append(customer)
 
     def record_queue_change(self, new_size: int, t: float) -> None:
         """Cierra el rectángulo anterior de la integral de cola y abre el siguiente.
 
-        Llamar cada vez que la cola cambia de tamaño (al encolar o desencolar).
+        Debe llamarse cada vez que la longitud de la cola cambia para mantener
+        la integral time-average correcta.
+
+        Args:
+            new_size: Nueva longitud de la cola tras el cambio.
+            t: Tiempo del cambio en minutos.
         """
         self._area_queue    += self._current_queue * (t - self._last_t)
         self._current_queue  = new_size
@@ -47,7 +68,14 @@ class MetricsCollector:
     def summarize(self, employees: list[Employee], duration: float) -> ReplicationResult:
         """Calcula todas las métricas al cierre del día.
 
-        Excluye clientes sin service_start (quedaron en cola al cerrar).
+        Excluye los clientes sin service_start (permanecieron en cola al cerrar).
+
+        Args:
+            employees: Lista de empleados activos al final de la réplica.
+            duration: Duración del día en minutos.
+
+        Returns:
+            Indicadores de rendimiento agregados para la réplica.
         """
         self._area_queue += self._current_queue * (duration - self._last_t)
 

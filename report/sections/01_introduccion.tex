@@ -19,9 +19,24 @@ El intervalo de tiempo entre la llegada de un consumidor y el siguiente
 se modela como un proceso de Poisson homogéneo por tramos (no homogéneo
 globalmente), con distribución exponencial de parámetro $\lambda$:
 \begin{itemize}
-  \item $\lambda_{\text{pico}} = 0{,}30$ clientes/min durante las horas pico,
-  \item $\lambda_{\text{fuera}} = 0{,}17$ clientes/min en el resto de la jornada.
+  \item $\lambda_{\text{peak}} = 0{,}30$ clientes/min durante las horas pico,
+  \item $\lambda_{\text{off-peak}} = 0{,}17$ clientes/min en el resto de la jornada.
 \end{itemize}
+
+\begin{quote}
+\textbf{Nota sobre los parámetros asumidos.}
+El enunciado no especifica valores concretos para las tasas de llegada ni
+para la proporción de clientes por tipo de producto.
+Los valores $\lambda_{\text{peak}} = 0{,}30$ y $\lambda_{\text{off-peak}} = 0{,}17$
+clientes/min se calibran a partir de referencias típicas de puestos de comida
+rápida en centros comerciales~\citep{banks2010discrete}: aproximadamente
+18 clientes/hora en pico y 10 fuera de pico, con una razón
+$\lambda_{\text{peak}} / \lambda_{\text{off-peak}} \approx 1{,}76$.
+Análogamente, se asume $p = 0{,}5$ (igual proporción de clientes de sándwich
+y sushi) al no disponerse de datos históricos del local.
+El impacto de variaciones en $\lambda_{\text{peak}}$ y $\lambda_{\text{off-peak}}$
+se analiza en la \cref{sec:sensibilidad}.
+\end{quote}
 
 El tiempo de preparación de cada pedido depende del tipo de producto y sigue
 una distribución Uniforme:
@@ -64,8 +79,8 @@ media de la cola y la utilización de los empleados.
     \toprule
     \textbf{Tipo} & \textbf{Variable} & \textbf{Distribución / Valor} & \textbf{Unidad} \\
     \midrule
-    Entrada & Tasa de llegadas (pico)     & $\lambda_p = 0{,}30$          & clientes/min \\
-    Entrada & Tasa de llegadas (fuera)    & $\lambda_f = 0{,}17$          & clientes/min \\
+    Entrada & Tasa de llegadas (pico)     & $\lambda_{\text{peak}} = 0{,}30$      & clientes/min \\
+    Entrada & Tasa de llegadas (fuera)    & $\lambda_{\text{off-peak}} = 0{,}17$  & clientes/min \\
     Entrada & Servicio sándwich           & $\mathcal{U}[3,5]$            & min \\
     Entrada & Servicio sushi              & $\mathcal{U}[5,8]$            & min \\
     Entrada & Prob.\ cliente sándwich     & $p = 0{,}5$                   & --- \\

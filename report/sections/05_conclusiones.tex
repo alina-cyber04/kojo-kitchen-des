@@ -6,13 +6,13 @@
 
 La simulación de 30 réplicas por escenario, emparejadas mediante números
 aleatorios comunes, proporciona evidencia estadística abrumadora ($p = 1{,}12 \times 10^{-11}$,
-$t = 10{,}8$, IC de la diferencia $[11{,}03;\;16{,}18]$ pp) de que incorporar
+$t = 10{,}8$, IC de la diferencia $[11{,}03;\;16{,}18]$\,\%) de que incorporar
 un tercer empleado durante las horas pico reduce el porcentaje de clientes
 con espera superior a 5 minutos de \textbf{16{,}7\,\%} (Escenario A) a
 \textbf{3{,}1\,\%} (Escenario B), una mejora del 81{,}4\,\%.
 
 Se \textbf{recomienda adoptar el Escenario B} para la tasa de llegadas actual
-($\lambda_{\text{pico}} = 0{,}30$ clientes/min).
+($\lambda_{\text{peak}} = 0{,}30$ clientes/min).
 
 \subsection{Hallazgos secundarios}
 
@@ -23,7 +23,7 @@ Se \textbf{recomienda adoptar el Escenario B} para la tasa de llegadas actual
     manteniéndose en niveles saludables que permiten absorber picos
     transitorios sin colapsar el sistema.
   \item El análisis de sensibilidad revela que la ventaja del Escenario B
-    se mantiene para $\lambda_{\text{pico}} \lesssim 0{,}42$; por encima de
+    se mantiene para $\lambda_{\text{peak}} \lesssim 0{,}42$; por encima de
     ese umbral sería necesario incorporar un cuarto empleado.
 \end{itemize}
 
@@ -50,7 +50,7 @@ Se \textbf{recomienda adoptar el Escenario B} para la tasa de llegadas actual
   \item Incorporar abandono de cola: modelar que los clientes se van si
     la espera estimada supera un umbral.
   \item Optimizar el número óptimo de empleados extra como función de
-    $\lambda_{\text{pico}}$, generalizando el análisis de sensibilidad.
+    $\lambda_{\text{peak}}$, generalizando el análisis de sensibilidad.
   \item Ajustar las distribuciones de servicio a datos reales del local
     (análisis de bondad de ajuste).
   \item Extender el análisis de parada usando métodos secuenciales

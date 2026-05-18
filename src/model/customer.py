@@ -16,18 +16,20 @@ class CustomerType(Enum):
 class Customer:
     """Entidad cliente que fluye por el sistema Kojo's Kitchen.
 
-    Registra los instantes clave y la duracion del servicio:
-        arrival_time   : cuando entra al sistema (cola o servicio directo)
-        service_time   : cuanto dura su preparacion (dibujado al llegar, fijo)
-        service_start  : cuando un empleado comienza a atenderlo
-        departure_time : cuando sale del sistema = service_start + service_time
+    Registra los instantes clave de su ciclo de vida. service_time se
+    extrae al llegar (no al ser atendido) para garantizar CRN: el cliente
+    k siempre consume el k-ésimo número del stream de servicio, independiente
+    de cuándo empiece a ser atendido.
 
-    service_time se dibuja al llegar y se guarda aqui para garantizar CRN:
-    el cliente k consume siempre el k-esimo numero del stream de servicio,
-    sin importar cuando empiece a ser atendido (que varia entre escenarios).
-
-    service_start == None significa que el cliente sigue esperando en cola.
-    departure_time == None significa que el cliente sigue en el sistema.
+    Attributes:
+        arrival_time: Minuto en que el cliente entra al sistema.
+        customer_type: Tipo de pedido (SANDWICH o SUSHI).
+        service_time: Duración de la preparación, fijada en la llegada.
+        customer_id: Identificador único asignado automáticamente.
+        service_start: Minuto en que un empleado inicia su atención;
+            None mientras el cliente espera en cola.
+        departure_time: Minuto en que el cliente abandona el sistema;
+            None si aún está siendo atendido.
     """
 
     arrival_time:   float
@@ -39,23 +41,48 @@ class Customer:
 
     @property
     def wait_time(self) -> float:
-        """Tiempo de espera en cola en minutos. Requiere que service_start este definido."""
+        """Tiempo de espera en cola en minutos.
+
+        Returns:
+            Diferencia entre service_start y arrival_time.
+
+        Raises:
+            RuntimeError: Si service_start aún no está definido.
+        """
         if self.service_start is None:
             raise RuntimeError(f"Cliente {self.customer_id} aun no inicio servicio")
         return self.service_start - self.arrival_time
 
     @property
     def sojourn_time(self) -> float:
-        """Tiempo total en el sistema: espera en cola + tiempo de servicio."""
+        """Tiempo total en el sistema: espera en cola más tiempo de servicio.
+
+        Returns:
+            Diferencia entre departure_time y arrival_time.
+
+        Raises:
+            RuntimeError: Si departure_time aún no está definido.
+        """
         if self.departure_time is None:
             raise RuntimeError(f"Cliente {self.customer_id} aun no salio del sistema")
         return self.departure_time - self.arrival_time
 
     def waited_more_than(self, threshold: float) -> bool:
-        """True si el cliente espero mas de `threshold` minutos en cola."""
+        """Indica si el cliente esperó más de threshold minutos en cola.
+
+        Args:
+            threshold: Umbral en minutos.
+
+        Returns:
+            True si wait_time supera threshold.
+        """
         return self.wait_time > threshold
 
     @property
     def is_sandwich(self) -> bool:
-        """True si el cliente pidio sandwich, False si pidio sushi."""
+        """Devuelve True si el cliente pidió sandwich, False si pidió sushi.
+
+        Returns:
+            True para SANDWICH, False para SUSHI.
+        """
         return self.customer_type == CustomerType.SANDWICH

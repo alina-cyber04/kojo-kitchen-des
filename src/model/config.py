@@ -2,11 +2,28 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class SimulationConfig(BaseModel):
-    """Parametros del modelo Kojo's Kitchen.
+    """Parámetros del modelo Kojo's Kitchen.
 
-    Todos los numeros del problema viven aqui.
-    El resto del codigo lee desde este objeto — nunca tiene valores hardcodeados.
-    Inmutable: misma configuracion garantizada en todas las replicas.
+    Objeto inmutable (frozen=True) que centraliza todos los valores numéricos
+    del problema. El resto del código lee exclusivamente desde esta instancia.
+
+    Attributes:
+        day_duration: Duración total del día en minutos.
+        peak1_start: Inicio del primer período pico (min).
+        peak1_end: Fin del primer período pico (min).
+        peak2_start: Inicio del segundo período pico (min).
+        peak2_end: Fin del segundo período pico (min).
+        lambda_peak: Tasa de llegadas en hora pico (clientes/min).
+        lambda_off_peak: Tasa de llegadas fuera de hora pico (clientes/min).
+        sandwich_min: Tiempo mínimo de preparación de sandwich (min).
+        sandwich_max: Tiempo máximo de preparación de sandwich (min).
+        sushi_min: Tiempo mínimo de preparación de sushi (min).
+        sushi_max: Tiempo máximo de preparación de sushi (min).
+        p_sandwich: Probabilidad de que un cliente pida sandwich.
+        base_staff: Número de empleados activos durante todo el día.
+        extra_staff: Empleados adicionales incorporados solo en hora pico.
+        n_replications: Número de réplicas por experimento.
+        seed: Semilla base para los generadores de números aleatorios.
     """
 
     # ── Horario (minutos desde apertura: 0 = 10:00am, 660 = 9:00pm) ──
@@ -57,16 +74,37 @@ class SimulationConfig(BaseModel):
 
     # ── Metodos de consulta ───────────────────────────────────────────
     def is_peak(self, t: float) -> bool:
-        """True si el tiempo t cae dentro de un periodo pico."""
+        """Indica si el tiempo t cae dentro de un período pico.
+
+        Args:
+            t: Tiempo en minutos desde la apertura.
+
+        Returns:
+            True si t pertenece al primer o segundo período pico.
+        """
         return (self.peak1_start <= t < self.peak1_end or
                 self.peak2_start <= t < self.peak2_end)
 
     def lambda_at(self, t: float) -> float:
-        """Tasa de llegadas en el tiempo t."""
+        """Devuelve la tasa de llegadas vigente en el tiempo t.
+
+        Args:
+            t: Tiempo en minutos desde la apertura.
+
+        Returns:
+            lambda_peak si t es hora pico, lambda_off_peak en caso contrario.
+        """
         return self.lambda_peak if self.is_peak(t) else self.lambda_off_peak
 
     def staff_at(self, t: float) -> int:
-        """Numero de empleados activos en el tiempo t."""
+        """Devuelve el número de empleados activos en el tiempo t.
+
+        Args:
+            t: Tiempo en minutos desde la apertura.
+
+        Returns:
+            Suma de empleados base y extra (si es hora pico).
+        """
         return self.base_staff + (self.extra_staff if self.is_peak(t) else 0)
 
 
